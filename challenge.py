@@ -9,7 +9,8 @@ class ChallengeSpider(scrapy.Spider):
 
     custom_settings = {
         'ROBOTSTXT_OBEY': False,
-        'CONCURRENT_REQUESTS': 1
+        'CONCURRENT_REQUESTS': 1,
+        'COMPRESSION_ENABLED': False
     }
 
     headers = {
@@ -109,19 +110,19 @@ class ChallengeSpider(scrapy.Spider):
             yield scrapy.http.FormRequest(url=f'https://www.mtsosfilings.gov/mtsos-master/viewInstance/update.html?id={self.token}',
                                       formdata=form_data, callback=self.parse)
 
-        # has_pagination = response.css('.appNextEnabled').get()
-        # if has_pagination:
-        #     self.page_counter += 1
-        #     f_id = int(self.data['_CBHTMLFRAGID_'])
-        #     f_id += 1
-        #     self.data['_CBHTMLFRAGID_'] = str(f_id)
-        #     self.data['_CBNAME_'] = 'selectPage'
-        #     node = response.css('.registerItemSearch-results::attr(id)').get()[4:]
-        #     self.data['_CBNODE_'] = node
-        #     self.data['_CBVALUE_'] = str(self.page_counter)
-        #     yield scrapy.http.FormRequest(
-        #         url=f'https://www.mtsosfilings.gov/mtsos-master/viewInstance/update.html?id={self.token}',
-        #         formdata=self.data, headers=self.headers, callback=self.pagination)
+        has_pagination = response.css('.appNextEnabled').get()
+        if has_pagination:
+            self.page_counter += 1
+            f_id = int(self.data['_CBHTMLFRAGID_'])
+            f_id += 1
+            self.data['_CBHTMLFRAGID_'] = str(f_id)
+            self.data['_CBNAME_'] = 'selectPage'
+            node = response.css('.registerItemSearch-results::attr(id)').get()[4:]
+            self.data['_CBNODE_'] = node
+            self.data['_CBVALUE_'] = str(self.page_counter)
+            yield scrapy.http.FormRequest(
+                url=f'https://www.mtsosfilings.gov/mtsos-master/viewInstance/update.html?id={self.token}',
+                formdata=self.data, headers=self.headers, callback=self.pagination)
 
     def parse(self, response: scrapy.http.Response):
         status = response.xpath("(//div[contains(@class, 'BusinessStatus')]/div[2]/text())[1]").get()
